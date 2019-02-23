@@ -3,6 +3,16 @@ import ReactDOM from "react-dom";
 import Highlighter from "react-highlight-words";
 import "./styles.css";
 
+const PUBLIC_URL = process.env.PUBLIC_URL || "";
+const lazyloadImage = PUBLIC_URL + "/static/lazyload-thumbnail.png";
+
+function preloadImage(url, cb) {
+  const img = new Image();
+  img.onload = cb;
+  img.src = url;
+}
+preloadImage(lazyloadImage, () => {});
+
 function App() {
   const [results, setResults] = React.useState(null);
   const [resultsCount, setResultsCount] = React.useState(0);
@@ -81,7 +91,8 @@ function ShowAutocompleteResults({ results, count, search }) {
           <div key={p.id}>
             <p>
               <img
-                src={`https://picsum.photos/1000/1000?image=${p.id}`}
+                // src={`https://picsum.photos/1000/1000?image=${p.id}`}
+                src={lazyloadImage}
                 alt={p.filename}
               />
               <b>
