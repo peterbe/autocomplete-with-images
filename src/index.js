@@ -10,6 +10,7 @@ function preloadImage(url, cb) {
   const img = new Image();
   img.onload = cb;
   img.src = url;
+  return img;
 }
 preloadImage(lazyloadImage, () => {});
 
@@ -90,9 +91,8 @@ function ShowAutocompleteResults({ results, count, search }) {
         return (
           <div key={p.id}>
             <p>
-              <img
-                // src={`https://picsum.photos/1000/1000?image=${p.id}`}
-                src={lazyloadImage}
+              <ShowImage
+                url={`https://picsum.photos/1000/1000?image=${p.id}`}
                 alt={p.filename}
               />
               <b>
@@ -119,6 +119,35 @@ function ShowAutocompleteResults({ results, count, search }) {
       })}
     </div>
   );
+}
+
+function ShowImage({ url, alt }) {
+  // By default, load the lazy-load image.
+  const [src, setSrc] = useState(lazyloadImage);
+
+  // As soon as this component has mounted, start preloading the
+  // real image and as soon as the preloading is done, swap the image src
+  // on the image tag in the DOM.
+
+  useEffect(
+    () => {
+      let mounted = true;
+      const preloading = preloadImage(url, () => {
+        // Immediately undo the preloading since we might not need this image.
+        // See https://jsfiddle.net/nw34gLgt/ for demo of this technique.
+        preloading.src = "";
+
+        if (mounted) {
+          setSrc(url);
+        }
+      });
+      return () => {
+        mounted = false;
+      };
+    },
+    [] // Means, only run this effect on mount and unmount. Not update.
+  );
+  return <img src={src} alt={alt} />;
 }
 
 const rootElement = document.getElementById("root");
