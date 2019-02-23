@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import Highlighter from "react-highlight-words";
 import "./styles.css";
@@ -14,16 +14,16 @@ function preloadImage(url, cb) {
 preloadImage(lazyloadImage, () => {});
 
 function App() {
-  const [results, setResults] = React.useState(null);
-  const [resultsCount, setResultsCount] = React.useState(0);
-  const [search, setSearch] = React.useState("");
+  const [results, setResults] = useState(null);
+  const [resultsCount, setResultsCount] = useState(0);
+  const [search, setSearch] = useState("");
 
   // Using sessionStorage is just a trick to avoid having to download
   // all these every time you reload the app.
-  const [allPictures, setAllPictures] = React.useState(
+  const [allPictures, setAllPictures] = useState(
     JSON.parse(sessionStorage.getItem("allPictures") || "null")
   );
-  React.useEffect(() => {
+  useEffect(() => {
     if (!allPictures) {
       (async url => {
         const res = await fetch(url);
@@ -34,7 +34,7 @@ function App() {
     }
   }, [allPictures]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!search.trim()) {
       return setResults(null);
     }
