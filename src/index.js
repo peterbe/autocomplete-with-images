@@ -121,7 +121,17 @@ function ShowAutocompleteResults({ results, count, search }) {
   );
 }
 
+// Module level "cache" of which URLs have been successfully inserted
+// into the DOM at least once.
+// By knowing these, we can, on repeat URLs, avoid the whole lazy-load
+// image swapping trick.
+const loadedOnce = new Set();
+
 function ShowImage({ url, alt }) {
+  if (loadedOnce.has(url)) {
+    // If so, no point bothering with the lazy-load swap.
+    return <img src={url} alt={alt} />;
+  }
   // By default, load the lazy-load image.
   const [src, setSrc] = useState(lazyloadImage);
 
@@ -139,6 +149,7 @@ function ShowImage({ url, alt }) {
 
         if (mounted) {
           setSrc(url);
+          loadedOnce.add(url);
         }
       });
       return () => {
