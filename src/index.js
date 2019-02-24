@@ -127,38 +127,34 @@ function ShowAutocompleteResults({ results, count, search }) {
 // image swapping trick.
 const loadedOnce = new Set();
 
-function ShowImage({ url, alt }) {
-  if (loadedOnce.has(url)) {
-    // If so, no point bothering with the lazy-load swap.
-    return <img src={url} alt={alt} />;
-  }
-  // By default, load the lazy-load image.
-  const [src, setSrc] = useState(lazyloadImage);
-
-  // As soon as this component has mounted, start preloading the
-  // real image and as soon as the preloading is done, swap the image src
-  // on the image tag in the DOM.
-
-  useEffect(
-    () => {
-      let mounted = true;
+class ShowImage extends React.PureComponent {
+  state = {
+    src: loadedOnce.has(this.props.url) ? this.props.url : lazyloadImage
+  };
+  componentDidMount() {
+    const { src } = this.state;
+    const { url } = this.props;
+    if (src === lazyloadImage) {
       const preloading = preloadImage(url, () => {
         // Immediately undo the preloading since we might not need this image.
         // See https://jsfiddle.net/nw34gLgt/ for demo of this technique.
         preloading.src = "";
 
-        if (mounted) {
-          setSrc(url);
+        if (!this.dismounted) {
+          this.setState({ src: url });
           loadedOnce.add(url);
         }
       });
-      return () => {
-        mounted = false;
-      };
-    },
-    [] // Means, only run this effect on mount and unmount. Not update.
-  );
-  return <img src={src} alt={alt} />;
+    }
+  }
+  componentWillUnmount() {
+    this.dismounted = true;
+  }
+  render() {
+    const { alt } = this.props;
+    const { src } = this.state;
+    return <img src={src} alt={alt} />;
+  }
 }
 
 const rootElement = document.getElementById("root");
