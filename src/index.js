@@ -140,6 +140,9 @@ const ShowImage = React.memo(({ url, alt }) => {
         }
         loadedOnce.add(url);
       }
+      // This must come before .decode() otherwise Safari will
+      // raise an EncodingError.
+      preloadImg.src = url;
       // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-decode
       // https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/decode#Browser_compatibility
       preloadImg.decode
@@ -147,7 +150,6 @@ const ShowImage = React.memo(({ url, alt }) => {
         : (preloadImg.onload = cb);
       // https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/decoding
       preloadImg.decoding = "sync";
-      preloadImg.src = url;
     }
 
     return () => {
