@@ -119,6 +119,8 @@ function ShowAutocompleteResults({ results, count, search }) {
 // image swapping trick.
 const loadedOnce = new Set();
 
+new Image().src = lazyloadImage;
+
 const ShowImage = React.memo(({ url, alt }) => {
   const [src, setSrc] = useState(loadedOnce.has(url) ? url : lazyloadImage);
   let preloadImg = null;
