@@ -6,13 +6,23 @@ import "./styles.css";
 const PUBLIC_URL = process.env.PUBLIC_URL || "";
 const lazyloadImage = PUBLIC_URL + "/static/lazyload-thumbnail.png";
 
-function preloadImage(url, cb) {
-  const img = new Image();
-  img.onload = cb;
-  img.src = url;
-  return img;
-}
-preloadImage(lazyloadImage, () => {});
+// const preloadRequests = {};
+// function preloadImage(url, cb) {
+//   if (url in preloadRequests) {
+//     preloadRequests[url].onload = cb;
+//     return preloadRequests[url];
+//   }
+//   const img = new Image();
+
+//   // Consider switching to `img.decode().then(cb)` instead.
+//   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-decode
+//   img.onload = cb;
+
+//   img.src = url;
+//   preloadRequests[url] = img;
+//   return img;
+// }
+// preloadImage(lazyloadImage, () => {});
 
 function App() {
   const [results, setResults] = useState(null);
@@ -88,13 +98,11 @@ function ShowAutocompleteResults({ results, count, search }) {
         {count > results.length && `, only showing first ${results.length}`}
       </p>
       {results.map(p => {
+        const imgUrl = `https://picsum.photos/1000/1000?image=${p.id}`;
         return (
           <div key={p.id}>
             <p>
-              <ShowImage
-                url={`https://picsum.photos/1000/1000?image=${p.id}`}
-                alt={p.filename}
-              />
+              <ShowImage url={imgUrl} alt={p.filename} />
               <b>
                 <Highlighter
                   searchWords={[search]}
@@ -113,6 +121,8 @@ function ShowAutocompleteResults({ results, count, search }) {
               <small>
                 {p.width}x{p.height} ({p.format})
               </small>
+              <br />
+              <code>{imgUrl}</code>
             </p>
           </div>
         );
@@ -135,19 +145,29 @@ class ShowImage extends React.PureComponent {
     const { src } = this.state;
     const { url } = this.props;
     if (src === lazyloadImage) {
-      const preloading = preloadImage(url, () => {
-        // Immediately undo the preloading since we might not need this image.
-        // See https://jsfiddle.net/nw34gLgt/ for demo of this technique.
-        preloading.src = "";
-
+      // We need to preload the eventually needed image.
+      this.preloadImg = new Image();
+      // Consider switching to `img.decode().then(cb)` instead.
+      // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-decode
+      this.preloadImg.onload = () => {
         if (!this.dismounted) {
           this.setState({ src: url });
-          loadedOnce.add(url);
         }
-      });
+        // XXX not sure it's worth keeping this
+        if (loadedOnce.has(url)) {
+          throw new Error(`${url} has already been loaded once!`);
+        }
+        loadedOnce.add(url);
+      };
+      this.preloadImg.src = url;
     }
   }
   componentWillUnmount() {
+    if (this.preloadImg) {
+      // Immediately undo the preloading since we might not need this image.
+      // See https://jsfiddle.net/nw34gLgt/ for demo of this technique.
+      this.preloadImg.src = "";
+    }
     this.dismounted = true;
   }
   render() {
