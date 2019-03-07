@@ -29,3 +29,10 @@
 input[type="text"] {
   padding: 15px;
 }
+
+footer {
+  margin-top: 120px;
+  padding-top: 30px;
+  border-top: 1px solid #efefef;
+  text-align: center;
+}
