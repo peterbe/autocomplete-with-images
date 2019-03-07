@@ -149,16 +149,22 @@ class ShowImage extends React.PureComponent {
       this.preloadImg = new Image();
       // Consider switching to `img.decode().then(cb)` instead.
       // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-decode
-      this.preloadImg.onload = () => {
-        if (!this.dismounted) {
-          this.setState({ src: url });
-        }
-        // XXX not sure it's worth keeping this
-        if (loadedOnce.has(url)) {
-          throw new Error(`${url} has already been loaded once!`);
-        }
-        loadedOnce.add(url);
-      };
+
+      this.preloadImg
+        .decode()
+        .then(() => {
+          if (!this.dismounted) {
+            this.setState({ src: url });
+          }
+          // XXX not sure it's worth keeping this
+          if (loadedOnce.has(url)) {
+            throw new Error(`${url} has already been loaded once!`);
+          }
+          loadedOnce.add(url);
+        })
+        .catch(ex => {
+          console.warn("Failed to decode", url);
+        });
       this.preloadImg.src = url;
     }
   }
