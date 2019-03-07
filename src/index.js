@@ -6,24 +6,6 @@ import "./styles.css";
 const PUBLIC_URL = process.env.PUBLIC_URL || "";
 const lazyloadImage = PUBLIC_URL + "/static/lazyload-thumbnail.png";
 
-// const preloadRequests = {};
-// function preloadImage(url, cb) {
-//   if (url in preloadRequests) {
-//     preloadRequests[url].onload = cb;
-//     return preloadRequests[url];
-//   }
-//   const img = new Image();
-
-//   // Consider switching to `img.decode().then(cb)` instead.
-//   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-decode
-//   img.onload = cb;
-
-//   img.src = url;
-//   preloadRequests[url] = img;
-//   return img;
-// }
-// preloadImage(lazyloadImage, () => {});
-
 function App() {
   const [results, setResults] = useState(null);
   const [resultsCount, setResultsCount] = useState(0);
@@ -137,51 +119,46 @@ function ShowAutocompleteResults({ results, count, search }) {
 // image swapping trick.
 const loadedOnce = new Set();
 
-class ShowImage extends React.PureComponent {
-  state = {
-    src: loadedOnce.has(this.props.url) ? this.props.url : lazyloadImage
-  };
-  componentDidMount() {
-    const { src } = this.state;
-    const { url } = this.props;
+const ShowImage = React.memo(({ url, alt }) => {
+  const [src, setSrc] = useState(loadedOnce.has(url) ? url : lazyloadImage);
+  let preloadImg = null;
+  let dismounted = false;
+  useEffect(() => {
     if (src === lazyloadImage) {
       // We need to preload the eventually needed image.
-      this.preloadImg = new Image();
-      // Consider switching to `img.decode().then(cb)` instead.
-      // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-decode
+      preloadImg = new Image();
 
-      this.preloadImg
-        .decode()
-        .then(() => {
-          if (!this.dismounted) {
-            this.setState({ src: url });
-          }
-          // XXX not sure it's worth keeping this
-          if (loadedOnce.has(url)) {
-            throw new Error(`${url} has already been loaded once!`);
-          }
-          loadedOnce.add(url);
-        })
-        .catch(ex => {
-          console.warn("Failed to decode", url);
-        });
-      this.preloadImg.src = url;
+      function cb() {
+        if (!dismounted) {
+          setSrc(url);
+        }
+        // XXX not sure it's worth keeping this
+        if (loadedOnce.has(url)) {
+          throw new Error(`${url} has already been loaded once!`);
+        }
+        loadedOnce.add(url);
+      }
+      // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-decode
+      // https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/decode#Browser_compatibility
+      preloadImg.decode
+        ? preloadImg.decode().then(cb)
+        : (preloadImg.onload = cb);
+      // https://developer.mozilla.org/en-US/docs/Web/API/HTMLImageElement/decoding
+      preloadImg.decoding = "sync";
+      preloadImg.src = url;
     }
-  }
-  componentWillUnmount() {
-    if (this.preloadImg) {
-      // Immediately undo the preloading since we might not need this image.
-      // See https://jsfiddle.net/nw34gLgt/ for demo of this technique.
-      this.preloadImg.src = "";
-    }
-    this.dismounted = true;
-  }
-  render() {
-    const { alt } = this.props;
-    const { src } = this.state;
-    return <img src={src} alt={alt} />;
-  }
-}
+
+    return () => {
+      if (preloadImg) {
+        // Immediately undo the preloading since we might not need this image.
+        // See https://jsfiddle.net/nw34gLgt/ for demo of this technique.
+        preloadImg.src = "";
+      }
+      dismounted = true;
+    };
+  }, []);
+  return <img src={src} alt={alt} />;
+});
 
 const rootElement = document.getElementById("root");
 ReactDOM.render(<App />, rootElement);
