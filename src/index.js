@@ -123,9 +123,11 @@ new Image().src = lazyloadImage;
 
 const ShowImage = React.memo(({ url, alt }) => {
   const [src, setSrc] = useState(loadedOnce.has(url) ? url : lazyloadImage);
-  let preloadImg = null;
-  let dismounted = false;
+
   useEffect(() => {
+    let preloadImg = null;
+    let dismounted = false;
+
     if (src === lazyloadImage) {
       // We need to preload the eventually needed image.
       preloadImg = new Image();
