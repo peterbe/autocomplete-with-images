@@ -113,7 +113,7 @@ function ShowAutocompleteResults({ results, count, search }) {
   );
 }
 
-// Module level "cache" of which URLs have been successfully inserted
+// Module level "cache" of which image URLs have been successfully inserted
 // into the DOM at least once.
 // By knowing these, we can, on repeat URLs, avoid the whole lazy-load
 // image swapping trick.
